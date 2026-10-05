@@ -1,5 +1,7 @@
 # IRL Gateway
 
+<!-- mcp-name: io.github.macropulse-lab/irl-gateway -->
+
 **Give your AI agent a trading account it can't misuse, and a record of every decision it can't rewrite.**
 
 IRL Gateway is an [MCP](https://modelcontextprotocol.io) server that sits between an AI agent (Claude, ChatGPT, or your own) and an exchange account. Every order the agent places goes through the [IRL Engine](https://irl.macropulse.live):
@@ -40,7 +42,7 @@ Behaviour the agent can rely on:
 You need an IRL server and an agent registered on it. Paper trading is the default: fills are simulated at live public Binance prices, and no exchange keys are needed.
 
 ```bash
-pip install git+https://github.com/macropulse-lab/irl-gateway
+pip install irl-gateway      # or run it without installing: uvx irl-gateway
 ```
 
 Register the agent once, with its mandate:
@@ -62,7 +64,8 @@ Then add the gateway to your MCP client, for example Claude Code or Claude Deskt
 {
   "mcpServers": {
     "irl-gateway": {
-      "command": "irl-gateway",
+      "command": "uvx",
+      "args": ["irl-gateway"],
       "env": {
         "IRL_BASE_URL": "https://irl.example.com",
         "IRL_API_TOKEN": "…",

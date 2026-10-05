@@ -1,0 +1,56 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.macropulse-lab/irl-gateway",
+  "title": "IRL Gateway",
+  "description": "An AI agent's trading mandate it can't break: checked before every order, reasoning sealed in IRL.",
+  "repository": {
+    "url": "https://github.com/macropulse-lab/irl-gateway",
+    "source": "github"
+  },
+  "websiteUrl": "https://irl.macropulse.live",
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "irl-gateway",
+      "version": "0.2.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "IRL_BASE_URL",
+          "description": "Your IRL server, e.g. https://irl.example.com",
+          "isRequired": true
+        },
+        {
+          "name": "IRL_API_TOKEN",
+          "description": "Bearer token for the IRL server",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "IRL_AGENT_ID",
+          "description": "The agent registered on IRL (its mandate)",
+          "isRequired": true
+        },
+        {
+          "name": "IRL_MODEL_HASH",
+          "description": "The model hash the agent was registered with (64 hex)",
+          "isRequired": true
+        },
+        {
+          "name": "GATEWAY_BROKER",
+          "description": "paper (default, live prices, no keys) or exchange",
+          "isRequired": false
+        },
+        {
+          "name": "PAPER_BALANCES",
+          "description": "Starting paper balances, e.g. USDT=1000",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
