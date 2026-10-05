@@ -171,3 +171,39 @@ def test_parse_balances():
     assert parse_balances("") == {}
     with pytest.raises(ConfigError):
         parse_balances("USDT=-1")
+
+
+# ---- paper persistence -------------------------------------------------------
+
+
+async def test_paper_account_survives_a_restart(tmp_path):
+    state = tmp_path / "paper_state.json"
+    first = PaperBroker(fixed_prices(BTC_USDT=100.0), {"USDT": 1_000.0}, state_path=state)
+    await first.place_market_order("BTC/USDT", Side.BUY, 2.0, client_order_id="a")
+
+    # The seed balances are ignored once a state file exists.
+    second = PaperBroker(fixed_prices(BTC_USDT=100.0), {"USDT": 5.0}, state_path=state)
+
+    assert await second.get_balances() == await first.get_balances()
+    assert (await second.get_balances())["BTC"] == pytest.approx(2.0)
+
+
+async def test_failed_order_does_not_touch_the_state_file(tmp_path):
+    state = tmp_path / "paper_state.json"
+    broker = PaperBroker(fixed_prices(BTC_USDT=100.0), {"USDT": 10.0}, state_path=state)
+
+    with pytest.raises(ValueError):
+        await broker.place_market_order("BTC/USDT", Side.BUY, 1.0, client_order_id="a")
+
+    assert not state.exists()
+
+
+@pytest.mark.parametrize(
+    "content", ["not json", '{"nope": 1}', '{"balances": {"USDT": -5}}', '{"balances": [1]}']
+)
+def test_unreadable_paper_state_is_an_error_not_a_reset(tmp_path, content):
+    state = tmp_path / "paper_state.json"
+    state.write_text(content)
+
+    with pytest.raises(ValueError, match="paper state"):
+        PaperBroker(fixed_prices(BTC_USDT=1.0), {"USDT": 1_000.0}, state_path=state)

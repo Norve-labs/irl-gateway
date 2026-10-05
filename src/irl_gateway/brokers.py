@@ -7,11 +7,14 @@ execution, not order-type coverage.
 
 from __future__ import annotations
 
-import itertools
+import json
+import os
+import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 import ccxt.async_support as ccxt_async
@@ -113,8 +116,13 @@ PriceSource = Callable[[str], Awaitable[float]]
 
 
 class PaperBroker(Broker):
-    """Simulated fills at live prices with an in-memory balance sheet. No
-    order ever leaves the process."""
+    """Simulated fills at live prices. No order ever leaves the process.
+
+    With ``state_path`` the balance sheet survives restarts: it is loaded from
+    that file when present (``balances`` then only seeds a new account) and
+    rewritten atomically after every fill. A state file that can't be read
+    is an error, never a silent reset to the starting balances.
+    """
 
     def __init__(
         self,
@@ -125,13 +133,17 @@ class PaperBroker(Broker):
         fee_bps: float = 10.0,
         slippage_bps: float = 5.0,
         on_close: Callable[[], Awaitable[None]] | None = None,
+        state_path: str | os.PathLike[str] | None = None,
     ):
         self._price_source = price_source
-        self._balances = {k.upper(): float(v) for k, v in balances.items()}
+        self._state_path = Path(state_path) if state_path else None
+        if self._state_path is not None and self._state_path.exists():
+            self._balances = _load_balances(self._state_path)
+        else:
+            self._balances = {k.upper(): float(v) for k, v in balances.items()}
         self.venue_id = venue_id
         self._fee = fee_bps / 10_000
         self._slip = slippage_bps / 10_000
-        self._ids = itertools.count(1)
         self._on_close = on_close
 
     async def get_price(self, symbol: str) -> float:
@@ -156,8 +168,9 @@ class PaperBroker(Broker):
         else:
             self._debit(base, quantity)
             self._credit(quote, gross - fee)
+        self._save()
         return Fill(
-            order_id=f"paper-{next(self._ids)}",
+            order_id=f"paper-{uuid.uuid4().hex[:16]}",
             symbol=symbol,
             side=side,
             quantity=quantity,
@@ -178,6 +191,26 @@ class PaperBroker(Broker):
     async def close(self) -> None:
         if self._on_close is not None:
             await self._on_close()
+
+    def _save(self) -> None:
+        if self._state_path is None:
+            return
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self._state_path.with_name(self._state_path.name + ".tmp")
+        tmp.write_text(json.dumps({"balances": self._balances}, sort_keys=True), encoding="utf-8")
+        os.replace(tmp, self._state_path)
+
+
+def _load_balances(path: Path) -> dict[str, float]:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        balances = raw["balances"]
+        parsed = {str(k).upper(): float(v) for k, v in balances.items()}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise ValueError(f"paper state {path} is unreadable; fix or remove it: {exc}") from exc
+    if any(v < 0 for v in parsed.values()):
+        raise ValueError(f"paper state {path} has negative balances")
+    return parsed
 
 
 def public_price_source(

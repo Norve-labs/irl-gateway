@@ -91,8 +91,8 @@ Ask the agent to check `get_policy`, then trade.
 | `EXCHANGE_ID` | `binance` | Any ccxt exchange id; also the price source for paper trading |
 | `EXCHANGE_API_KEY`, `EXCHANGE_API_SECRET` | | Required for `exchange` |
 | `EXCHANGE_TESTNET` | `true` | Use the exchange's testnet |
-| `PAPER_BALANCES` | `USDT=1000` | Starting paper balances |
-| `IRL_GATEWAY_HOME` | `~/.irl-gateway` | Journal (`journal.jsonl`) and kill switch (`KILL`) location |
+| `PAPER_BALANCES` | `USDT=1000` | Starting paper balances (used only until `paper_state.json` exists; the paper account then persists across restarts) |
+| `IRL_GATEWAY_HOME` | `~/.irl-gateway` | Journal (`journal.jsonl`), kill switch (`KILL`) and paper account (`paper_state.json`) location |
 
 The venue IRL sees is the exchange id (`binance`), or `paper-<exchange>` for paper trading, so a mandate can allow paper trading while denying the real account.
 
