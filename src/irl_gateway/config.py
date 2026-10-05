@@ -37,6 +37,7 @@ class Settings:
     paper_balances: dict[str, float]
     journal_path: Path
     kill_switch_path: Path
+    paper_state_path: Path
 
 
 def load_settings(env: Mapping[str, str]) -> Settings:
@@ -86,6 +87,7 @@ def load_settings(env: Mapping[str, str]) -> Settings:
         paper_balances=parse_balances(env.get("PAPER_BALANCES", "USDT=1000")),
         journal_path=home / "journal.jsonl",
         kill_switch_path=home / "KILL",
+        paper_state_path=home / "paper_state.json",
     )
 
 

@@ -41,7 +41,11 @@ def build_gateway(settings: Settings) -> TradeGateway:
     else:
         price, close = public_price_source(settings.exchange_id)
         broker = PaperBroker(
-            price, settings.paper_balances, venue_id=f"paper-{settings.exchange_id}", on_close=close
+            price,
+            settings.paper_balances,
+            venue_id=f"paper-{settings.exchange_id}",
+            on_close=close,
+            state_path=settings.paper_state_path,
         )
     agent = AgentConfig(
         agent_id=settings.agent_id,
