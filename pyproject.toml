@@ -1,0 +1,53 @@
+[project]
+name = "irl-gateway"
+version = "0.1.0"
+description = "MCP trading gateway for AI agents: IRL pre-trade policy, sealed rationale, and verifiable fills."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp>=2.3,<3",
+    "aiohttp>=3.9",
+    "ccxt>=4.3",
+]
+
+[project.scripts]
+irl-gateway = "irl_gateway.server:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "black>=24.0",
+    "isort>=5.13",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+target-version = ["py312"]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+strict = true
