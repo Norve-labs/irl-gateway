@@ -1,19 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.macropulse-lab/irl-gateway",
+  "name": "io.github.horkos-labs/irl-gateway",
   "title": "IRL Gateway",
   "description": "An AI agent's trading mandate it can't break: checked before every order, reasoning sealed in IRL.",
   "repository": {
-    "url": "https://github.com/macropulse-lab/irl-gateway",
+    "url": "https://github.com/horkos-labs/irl-gateway",
     "source": "github"
   },
   "websiteUrl": "https://irl.macropulse.live",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "irl-gateway",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
