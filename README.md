@@ -1,6 +1,6 @@
 # IRL Gateway
 
-<!-- mcp-name: io.github.macropulse-lab/irl-gateway -->
+<!-- mcp-name: io.github.horkos-labs/irl-gateway -->
 
 **Give your AI agent a trading account it can't misuse, and a record of every decision it can't rewrite.**
 
