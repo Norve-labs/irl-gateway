@@ -4,7 +4,7 @@
   "title": "IRL Gateway",
   "description": "An AI agent's trading mandate it can't break: checked before every order, reasoning sealed in IRL.",
   "repository": {
-    "url": "https://github.com/macropulse-lab/irl-gateway",
+    "url": "https://github.com/horkos-labs/irl-gateway",
     "source": "github"
   },
   "websiteUrl": "https://irl.macropulse.live",
