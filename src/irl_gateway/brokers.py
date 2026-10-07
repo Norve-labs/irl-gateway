@@ -3,6 +3,12 @@
 Symbols use ccxt's unified 'BASE/QUOTE' form (e.g. 'BTC/USDT'). Only spot
 market orders are supported: the gateway's job is controlled, audited
 execution, not order-type coverage.
+
+Every order quantity goes through ``normalize_quantity`` first: rounded down
+to the venue's amount step and checked against its minimum amount and minimum
+order value. The gateway does this before sealing, so the quantity IRL seals
+is exactly the quantity sent. Paper trading applies the same public market
+rules, so a paper run fails where a live one would.
 """
 
 from __future__ import annotations
@@ -18,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import ccxt.async_support as ccxt_async
+from ccxt.base.errors import BadSymbol, InvalidOrder
 
 
 class Side(str, Enum):
@@ -36,8 +43,50 @@ class Fill:
     fee_asset: str | None
 
 
+class OrderSizeError(ValueError):
+    """The order can't be placed at this size on this venue (step, minimums)."""
+
+
+QuantityRule = Callable[[str, float, float], Awaitable[float]]
+
+
+async def ccxt_quantity_rule(exchange: Any, symbol: str, quantity: float, price: float) -> float:
+    """Round ``quantity`` down to the market's amount step and enforce its
+    minimum amount and minimum order value (cost). Raises OrderSizeError."""
+    await exchange.load_markets()
+    base, quote = split_symbol(symbol)
+    try:
+        market = exchange.market(symbol)
+        rounded = float(exchange.amount_to_precision(symbol, quantity))
+    except BadSymbol as exc:
+        raise OrderSizeError(f"{symbol} is not traded on {exchange.id}") from exc
+    except InvalidOrder as exc:
+        raise OrderSizeError(
+            f"{quantity:g} {base} is smaller than the smallest {symbol} order step on {exchange.id}"
+        ) from exc
+    limits = market.get("limits") or {}
+    min_amount = (limits.get("amount") or {}).get("min")
+    min_cost = (limits.get("cost") or {}).get("min")
+    if rounded <= 0:
+        raise OrderSizeError(f"{quantity:g} {base} rounds to zero on {exchange.id}")
+    if min_amount and rounded < float(min_amount):
+        raise OrderSizeError(
+            f"{rounded:g} {base} is below the {exchange.id} minimum of {float(min_amount):g} {base}"
+        )
+    if min_cost and rounded * price < float(min_cost):
+        raise OrderSizeError(
+            f"order value {rounded * price:.2f} {quote} is below the {exchange.id} "
+            f"minimum of {float(min_cost):g} {quote}"
+        )
+    return rounded
+
+
 class Broker(ABC):
     venue_id: str
+
+    async def normalize_quantity(self, symbol: str, quantity: float, price: float) -> float:
+        """The quantity this venue will actually accept; OrderSizeError if none."""
+        return quantity
 
     @abstractmethod
     async def get_price(self, symbol: str) -> float: ...
@@ -84,6 +133,9 @@ class CcxtBroker(Broker):
     async def get_price(self, symbol: str) -> float:
         ticker = await self._exchange.fetch_ticker(symbol)
         return float(ticker["last"])
+
+    async def normalize_quantity(self, symbol: str, quantity: float, price: float) -> float:
+        return await ccxt_quantity_rule(self._exchange, symbol, quantity, price)
 
     async def get_balances(self) -> dict[str, float]:
         balance = await self._exchange.fetch_balance()
@@ -134,8 +186,10 @@ class PaperBroker(Broker):
         slippage_bps: float = 5.0,
         on_close: Callable[[], Awaitable[None]] | None = None,
         state_path: str | os.PathLike[str] | None = None,
+        quantity_rule: QuantityRule | None = None,
     ):
         self._price_source = price_source
+        self._quantity_rule = quantity_rule
         self._state_path = Path(state_path) if state_path else None
         if self._state_path is not None and self._state_path.exists():
             self._balances = _load_balances(self._state_path)
@@ -148,6 +202,11 @@ class PaperBroker(Broker):
 
     async def get_price(self, symbol: str) -> float:
         return await self._price_source(symbol)
+
+    async def normalize_quantity(self, symbol: str, quantity: float, price: float) -> float:
+        if self._quantity_rule is None:
+            return quantity
+        return await self._quantity_rule(symbol, quantity, price)
 
     async def get_balances(self) -> dict[str, float]:
         return {k: v for k, v in self._balances.items() if v}
@@ -217,10 +276,22 @@ def public_price_source(
     exchange_id: str = "binance",
 ) -> tuple[PriceSource, Callable[[], Awaitable[None]]]:
     """Live last-trade prices from an exchange's public API (no keys)."""
+    price, _, close = public_market(exchange_id)
+    return price, close
+
+
+def public_market(
+    exchange_id: str = "binance",
+) -> tuple[PriceSource, QuantityRule, Callable[[], Awaitable[None]]]:
+    """Live prices and the venue's real order-size rules, from its public API
+    (no keys): what paper trading needs to behave like the live venue."""
     exchange = getattr(ccxt_async, exchange_id)({"enableRateLimit": True})
 
     async def price(symbol: str) -> float:
         ticker = await exchange.fetch_ticker(symbol)
         return float(ticker["last"])
 
-    return price, exchange.close
+    async def rule(symbol: str, quantity: float, last_price: float) -> float:
+        return await ccxt_quantity_rule(exchange, symbol, quantity, last_price)
+
+    return price, rule, exchange.close

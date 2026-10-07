@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://norve.dev",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "irl-gateway",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
