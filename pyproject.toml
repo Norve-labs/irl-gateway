@@ -1,6 +1,6 @@
 [project]
 name = "irl-gateway"
-version = "0.2.1"
+version = "0.2.2"
 description = "MCP trading gateway for AI agents: IRL pre-trade policy, sealed rationale, and verifiable fills."
 readme = "README.md"
 license = "MIT"
