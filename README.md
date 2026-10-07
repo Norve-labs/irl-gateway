@@ -4,7 +4,7 @@
 
 **Give your AI agent a trading account it can't misuse, and a record of every decision it can't rewrite.**
 
-IRL Gateway is an [MCP](https://modelcontextprotocol.io) server that sits between an AI agent (Claude, ChatGPT, or your own) and an exchange account. Every order the agent places goes through the [IRL Engine](https://irl.macropulse.live):
+IRL Gateway is an [MCP](https://modelcontextprotocol.io) server that sits between an AI agent (Claude, ChatGPT, or your own) and an exchange account. Every order the agent places goes through the [IRL Engine](https://norve.dev):
 
 1. **Policy before execution.** IRL checks the order against the agent's mandate (active status, notional cap, allowed assets and venues) before anything reaches the exchange. Out of mandate means no order.
 2. **The rationale is sealed.** The agent must say why it is trading. The gateway hashes that rationale together with the trade inputs and seals the hash into IRL's tamper-evident trace, anchored daily to Bitcoin. The plaintext stays in your local journal.
