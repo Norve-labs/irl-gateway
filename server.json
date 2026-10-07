@@ -7,13 +7,13 @@
     "url": "https://github.com/norve-labs/irl-gateway",
     "source": "github"
   },
-  "websiteUrl": "https://irl.macropulse.live",
-  "version": "0.2.2",
+  "websiteUrl": "https://norve.dev",
+  "version": "0.2.3",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "irl-gateway",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
