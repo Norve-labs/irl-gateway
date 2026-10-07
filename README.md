@@ -36,20 +36,33 @@ Behaviour the agent can rely on:
 - **Fail closed.** If IRL is unreachable or denies the intent, no order is sent.
 - **Kill switch.** Create the file `~/.irl-gateway/KILL` and every trade is refused before IRL is even called. Delete it to resume.
 - **No silent fills.** If the exchange fills but the IRL bind fails, the result still reports the fill and flags it for reconciliation.
+- **Sealed = sent.** Order sizes are rounded to the venue's step and checked against its minimums *before* IRL seals them, so the sealed quantity is exactly what reaches the exchange. An order the venue would reject is blocked with a plain reason instead.
 
-## Quick start (paper trading)
-
-You need an IRL server and an agent registered on it. Paper trading is the default: fills are simulated at live public Binance prices, and no exchange keys are needed.
+## Quick start (paper trading, about a minute)
 
 ```bash
-pip install irl-gateway      # or run it without installing: uvx irl-gateway
+uvx irl-gateway init
 ```
 
-Register the agent once, with its mandate:
+That one command gets a free paper-tier token from [norve.dev](https://norve.dev), registers your agent with a starter mandate (BTC/USDT and ETH/USDT, at most 1,000 USDT per order, on `paper-binance`), saves the credentials to `~/.irl-gateway/agent.json`, and prints:
+
+- a `claude mcp add irl-gateway ...` line for Claude Code, and
+- an `mcpServers` block for Claude Desktop, Cursor or any MCP client.
+
+Paste one of them, then ask the agent to call `get_policy` and make its first paper trade. Paper fills are simulated at live public Binance prices with Binance's real order-size rules, so no exchange keys are needed.
+
+Options: `--name`, `--assets BTC/USDT,SOL/USDT`, `--max-notional 250`, `--contact you@example.com` (so we can reach you), `--server` (your own IRL engine).
+
+**Free tier limits:** paper venues only, up to 3 agents and 500 authorizations a day per token. Want to trade live, or run without limits? Self-host the [engine](https://github.com/norve-labs/irl) or ask for a full token.
+
+<details>
+<summary>Doing it by hand instead</summary>
 
 ```bash
-curl -X POST "$IRL_BASE_URL/irl/agents" -H "Authorization: Bearer $IRL_API_TOKEN" \
-  -H "Content-Type: application/json" -d '{
+curl -X POST https://norve.dev/irl/signup -H "Content-Type: application/json" -d '{"client_name": "my-claude-trader"}'
+# -> {"token": "...", "tier": "paper", ...}  (shown once)
+
+curl -X POST https://norve.dev/irl/agents -H "Authorization: Bearer $IRL_API_TOKEN"   -H "Content-Type: application/json" -d '{
     "name": "my-claude-trader",
     "model_hash_hex": "<sha256 of your agent config>",
     "max_notional": 100,
@@ -58,7 +71,7 @@ curl -X POST "$IRL_BASE_URL/irl/agents" -H "Authorization: Bearer $IRL_API_TOKEN
   }'
 ```
 
-Then add the gateway to your MCP client, for example Claude Code or Claude Desktop:
+Then add the gateway to your MCP client:
 
 ```json
 {
@@ -67,7 +80,7 @@ Then add the gateway to your MCP client, for example Claude Code or Claude Deskt
       "command": "uvx",
       "args": ["irl-gateway"],
       "env": {
-        "IRL_BASE_URL": "https://irl.example.com",
+        "IRL_BASE_URL": "https://norve.dev",
         "IRL_API_TOKEN": "…",
         "IRL_AGENT_ID": "<agent_id from registration>",
         "IRL_MODEL_HASH": "<the same model_hash_hex>",
@@ -79,7 +92,7 @@ Then add the gateway to your MCP client, for example Claude Code or Claude Deskt
 }
 ```
 
-Ask the agent to check `get_policy`, then trade.
+</details>
 
 ## Configuration
 

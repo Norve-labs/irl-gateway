@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -12,7 +13,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
-from irl_gateway.brokers import CcxtBroker, PaperBroker, public_price_source
+from irl_gateway.brokers import CcxtBroker, PaperBroker, public_market
 from irl_gateway.config import Settings, load_settings
 from irl_gateway.gateway import AgentConfig, TradeGateway, TradeRequest
 from irl_gateway.irl import IrlClient, IrlError
@@ -39,13 +40,14 @@ def build_gateway(settings: Settings) -> TradeGateway:
             testnet=settings.exchange_testnet,
         )
     else:
-        price, close = public_price_source(settings.exchange_id)
+        price, quantity_rule, close = public_market(settings.exchange_id)
         broker = PaperBroker(
             price,
             settings.paper_balances,
             venue_id=f"paper-{settings.exchange_id}",
             on_close=close,
             state_path=settings.paper_state_path,
+            quantity_rule=quantity_rule,
         )
     agent = AgentConfig(
         agent_id=settings.agent_id,
@@ -153,6 +155,10 @@ def create_server(gateway: TradeGateway) -> MCPServer:
 
 
 def main() -> None:
+    if sys.argv[1:2] == ["init"]:  # `irl-gateway init`: onboarding, not the server
+        from irl_gateway.init import main as init_main
+
+        raise SystemExit(init_main(sys.argv[2:]))
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
     gateway = build_gateway(load_settings(os.environ))
     create_server(gateway).run("stdio")

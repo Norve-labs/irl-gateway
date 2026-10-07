@@ -23,7 +23,7 @@ from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
-from irl_gateway.brokers import Broker, Fill, Side, split_symbol
+from irl_gateway.brokers import Broker, Fill, OrderSizeError, Side, split_symbol
 from irl_gateway.irl import AgentIdentity, IrlClient, IrlDenied, IrlError
 from irl_gateway.journal import CONTEXT_PREFIX, Journal, context_hash
 
@@ -128,7 +128,19 @@ class TradeGateway:
             return TradeOutcome(
                 "blocked", f"could not price {request.symbol}: {exc}", client_order_id
             )
-        quantity = _base_quantity(request, price)
+        try:
+            # Round to what the venue accepts BEFORE sealing, so the sealed
+            # quantity is the one actually sent (otherwise bind is DIVERGENT).
+            quantity = await self._broker.normalize_quantity(
+                request.symbol, _base_quantity(request, price), price
+            )
+        except OrderSizeError as exc:
+            return TradeOutcome("blocked", str(exc), client_order_id)
+        except Exception as exc:  # noqa: BLE001 - venue metadata errors block the trade
+            logger.warning("market rules lookup failed for %s: %r", request.symbol, exc)
+            return TradeOutcome(
+                "blocked", f"could not load {request.symbol} market rules: {exc}", client_order_id
+            )
         notional = quantity * price
         _, quote = split_symbol(request.symbol)
         model_id = request.model_id or self._agent.default_model_id
