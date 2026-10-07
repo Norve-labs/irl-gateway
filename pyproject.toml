@@ -1,6 +1,6 @@
 [project]
 name = "irl-gateway"
-version = "0.2.3"
+version = "0.2.4"
 description = "MCP trading gateway for AI agents: IRL pre-trade policy, sealed rationale, and verifiable fills."
 readme = "README.md"
 license = "MIT"
@@ -10,6 +10,12 @@ dependencies = [
     "aiohttp>=3.9",
     "ccxt>=4.3",
 ]
+
+[project.urls]
+Homepage = "https://norve.dev"
+Repository = "https://github.com/norve-labs/irl-gateway"
+Issues = "https://github.com/norve-labs/irl-gateway/issues"
+Documentation = "https://github.com/norve-labs/irl-public-docs"
 
 [project.scripts]
 irl-gateway = "irl_gateway.server:main"
