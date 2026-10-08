@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Get started (free, paper trading)
+    url: https://norve.dev/#developers
+    about: "uvx irl-gateway init: a free token and an MCP config in one command."
