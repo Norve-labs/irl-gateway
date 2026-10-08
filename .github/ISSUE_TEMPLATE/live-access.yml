@@ -1,0 +1,52 @@
+name: Request live access
+description: Trade on a live venue, or get more than the free tier's 3 agents and 500 authorizations a day.
+title: "Live access: "
+labels: ["live-access"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying IRL. The free tier (`uvx irl-gateway init`) is paper-only, with 3 agents and 500 authorizations a day.
+        Tell us what you need below. Everything is written; there is no call. **Don't paste API keys or tokens here: issues are public.**
+  - type: input
+    id: token_id
+    attributes:
+      label: Your token id
+      description: The 12-character `token_id` from signup (in ~/.irl-gateway/agent.json). Not the token itself.
+      placeholder: "e.g. 3f9a1c0b7d2e"
+    validations:
+      required: true
+  - type: textarea
+    id: building
+    attributes:
+      label: What are you building?
+      description: One or two sentences about the agent and who it trades for (you, or your customers).
+    validations:
+      required: true
+  - type: dropdown
+    id: venue
+    attributes:
+      label: Where should it trade?
+      options:
+        - Binance (spot)
+        - Coinbase
+        - Kraken
+        - Another exchange or broker (say which below)
+        - Still paper, I only need higher limits
+    validations:
+      required: true
+  - type: dropdown
+    id: volume
+    attributes:
+      label: Expected volume
+      options:
+        - Up to 100 orders a day
+        - 100 to 1,000 orders a day
+        - More than 1,000 orders a day
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Other venues, number of agents, features you'd need. Optional.
